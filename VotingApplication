@@ -1,0 +1,121 @@
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.7.0 <0.9.0;
+
+
+interface IVotingContract{
+
+//only one address should be able to add candidates
+    function addCandidate(bytes32[] memory candidateNames) external returns(bool);
+
+    
+    function voteCandidate(uint candidateId) external returns(bool);
+
+    //getWinner returns the name of the winner
+    function getWinner() external returns(bytes32);
+}
+
+contract Test{
+    address public chairPerson;
+    uint timeDeployed;
+    mapping(address => Voter) public voters;
+    Candidate[] public candidates;
+
+    constructor() {
+        chairPerson = msg.sender;
+        timeDeployed = block.timestamp;
+    }
+    function changeOwner(address newOwner) public{
+        require(msg.sender == chairPerson, "Only Chair Person is capable of changing owner");
+        chairPerson = newOwner;
+    }
+    struct Voter {
+        uint weight; // weight is accumulated by delegation
+        bool voted;  // if true, that person already voted
+        address voteCandidate; // person delegated to
+        uint vote;   // index of the voted proposal
+    }
+    struct Candidate{
+        // If you can limit the length to a certain number of bytes, 
+        // always use one of bytes1 to bytes32 because they are much cheaper
+        bytes32 name;   // short name (up to 32 bytes)
+        uint voteCount; // number of accumulated votes
+        uint candidateId;
+    }
+    function addCandidate(bytes32[] memory candidateNames) public{
+        while (block.timestamp <= timeDeployed + 180) {
+            require(msg.sender == chairPerson, "Only Chair Person is capable of adding candidates");
+            voters[chairPerson].weight = 1;
+            for (uint i = 0; i < candidateNames.length; i++) {
+            // 'Proposal({...})' creates a temporary
+            // Proposal object and 'proposals.push(...)'
+            // appends it to the end of 'proposals'.
+            candidates.push(Candidate({
+                name: candidateNames[i],
+                voteCount: 0,
+                candidateId: 0
+            }));
+            }
+        }
+    }
+    function giveRightToVote(address voter) public{
+        require(
+            msg.sender == chairPerson,
+            "Only chairperson can give right to vote."
+        );
+        require(
+            !voters[voter].voted,
+            "The voter already voted."
+        );
+        require(voters[voter].weight == 0);
+        voters[voter].weight = 1;
+    }
+    function voteCandidate(uint candidateId, address to) external{
+        Voter storage sender = voters[msg.sender];
+        require(!sender.voted, "You already voted.");
+        require(to != msg.sender, "Self-delegation is disallowed.");
+
+        while (voters[to].voteCandidate != address(0)) {
+            to = voters[to].voteCandidate;
+
+            // We found a loop in the delegation, not allowed.
+            require(to != msg.sender, "Found loop in delegation.");
+        }
+        sender.voted = true;
+        sender.voteCandidate = to;
+        Voter storage voteCandidate = voters[to];
+        if (voteCandidate.voted) {
+            candidates[voteCandidate.vote].voteCount += sender.weight;
+        } else {
+            voteCandidate.weight += sender.weight;
+        }
+    }
+    function vote(uint proposal) public {
+        Voter storage sender = voters[msg.sender];
+        require(sender.weight != 0, "Has no right to vote");
+        require(!sender.voted, "Already voted.");
+        sender.voted = true;
+        sender.vote = proposal;
+
+        // If 'proposal' is out of the range of the array,
+        // this will throw automatically and revert all
+        // changes.
+        candidates[proposal].voteCount += sender.weight;
+    }
+    function winningCandidate() public view returns (uint winningCandidate_) {
+        uint winningVoteCount = 0;
+        for (uint p = 0; p < candidates.length; p++) {
+            if (candidates[p].voteCount > winningVoteCount) {
+                winningVoteCount = candidates[p].voteCount;
+                winningCandidate_ = p;
+            }
+        }
+
+
+    
+
+    }
+    function getWinner() external view returns (bytes32 winnerName_){
+        winnerName_ = candidates[winningCandidate()].name;
+    }
+}
