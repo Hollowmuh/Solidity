@@ -89,6 +89,7 @@ contract Ballot is IVotingContract{
         Voter storage sender = voters[msg.sender];
         require(!sender.voted, "You already voted.");
         require(to != msg.sender, "Self-delegation is disallowed.");
+        
 
         while (voters[to].delegate != address(0)) {
             to = voters[to].delegate;
@@ -99,6 +100,7 @@ contract Ballot is IVotingContract{
         sender.voted = true;
         sender.delegate = to;
         Voter storage delegate_ = voters[to];
+        require(delegate_.weight<3, "At most three voting rights can be delegated to a single address");
         if (delegate_.voted) {
             // If the delegate already voted,
             // directly add to the number of votes
