@@ -1,0 +1,40 @@
+//SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+
+import "github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v4.5/contracts/utils/Address.sol";
+import "hardhat/console.sol";
+
+contract SavingsContract {
+    using Address for address payable;
+    mapping(address => uint) public balances;
+    address owner;
+    
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function deposit() external payable {
+        balances[msg.sender] += msg.value;
+    }
+
+    function withdraw(uint _amount) public {
+        require(msg.sender != address(0));
+        require((balances[msg.sender]) > 0, "You have zero balance");
+        require((_amount * 1 ether < balances[msg.sender]), "Insufficient Balance");
+
+
+
+        payable(msg.sender).sendValue(_amount * 1 ether);
+        balances[msg.sender] -= _amount * 1 ether;
+
+
+        console.log("");
+        console.log("Your current Balance: ", balances[msg.sender]);
+    }
+    function getBalance()  public view returns(uint){
+        require(msg.sender == owner, "Only owner can see contract balance");
+        return address(this).balance;
+    }
+}
