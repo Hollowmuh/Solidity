@@ -8,6 +8,7 @@ import "hardhat/console.sol";
 contract ThriftContractSolo {
     using Address for address payable;
     mapping(address => uint) public balances;
+    mapping(address => uint) public timeLocked;
     address owner;
     uint timeSaved;
     
@@ -16,8 +17,10 @@ contract ThriftContractSolo {
         owner = msg.sender;
     }
     ///@notice Savings would be locked for seven days
-    function deposit() external payable {
+    function deposit(uint _timeLocked) external payable {
+        require(msg.value > 0, "Zero deposits not allowed");
         balances[msg.sender] += msg.value;
+        timeLocked[msg.sender] += _timeLocked;
         timeSaved = block.timestamp;
     }
 
@@ -25,7 +28,8 @@ contract ThriftContractSolo {
         require(msg.sender != address(0));
         require((balances[msg.sender]) > 0, "You have zero balance");
         require((_amount * 1 ether < balances[msg.sender]), "Insufficient Balance");
-        require((timeSaved > block.timestamp + 7 days), "Savings locked for 7 days");
+        require((block.timestamp > timeSaved + timeLocked[msg.sender] * 1 days), "Savings locked for duration you specified");
+        ///@dev I couldn't get a way to make the error emit duration specified
 
 
 
