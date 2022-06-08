@@ -12,7 +12,6 @@ contract ThriftContractSolo {
     address owner;
     uint timeSaved;
     
-
     constructor() {
         owner = msg.sender;
     }
@@ -23,20 +22,15 @@ contract ThriftContractSolo {
         timeLocked[msg.sender] += _timeLocked;
         timeSaved = block.timestamp;
     }
-
     function withdraw(uint _amount) public {
         require(msg.sender != address(0));
         require((balances[msg.sender]) > 0, "You have zero balance");
         require((_amount * 1 ether < balances[msg.sender]), "Insufficient Balance");
         require((block.timestamp > timeSaved + timeLocked[msg.sender] * 1 days), "Savings locked for duration you specified");
         ///@dev I couldn't get a way to make the error emit duration specified
-
-
-
+        
         payable(msg.sender).sendValue(_amount * 1 ether);
         balances[msg.sender] -= _amount * 1 ether;
-
-
         console.log("");
         console.log("Your current Balance: ", balances[msg.sender]);
     }
