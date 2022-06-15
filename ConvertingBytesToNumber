@@ -2,9 +2,12 @@
 pragma solidity ^0.8.0;
 
 contract ConvertingBytesToNumber {
+    digits = 16; //Amount depending on how many didits you need
+    modulo = 10 ** digits;
+    
     function bytesToUint(string memory b) public pure returns (uint256){
         uint rand;
-        rand = uint(keccak256(abi.encodePacked(_str))) % 10000000000000000; //Zeros depending on how many digits you need
+        rand = uint(keccak256(abi.encodePacked(_str))) % modulo;
         return rand;
     return number;
     }
