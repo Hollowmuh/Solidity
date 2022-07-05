@@ -1,0 +1,22 @@
+//SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
+library PriceConverter {
+    function getPrice(address _dataAddress) internal view returns(uint) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(_dataAddress);
+        (,int price,,,) = priceFeed.latestRoundData();
+        return uint256(price * 1e10);
+    }
+    function getVersion(address _dataAddress) internal view returns (uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(_dataAddress);
+        return priceFeed.version();
+    }
+    function getConversionRate(uint _ethAmount, address _dataAddress) internal view returns (uint) {
+        uint ethPrice = getPrice(_dataAddress);
+        uint ethAmountInUsd = (ethPrice * _ethAmount) / 1e18;
+        return ethAmountInUsd;
+    }
+
+} 
